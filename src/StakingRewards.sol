@@ -3,7 +3,7 @@ pragma solidity ^0.5.16;
 
 import "../lib/openzeppelin-contracts/contracts/math/SafeMath.sol";
 import "../lib/openzeppelin-contracts/contracts/token/ERC20/ERC20Detailed.sol";
-import "../lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import "../lib/openzeppelin-contracts/contracts/token/ERC20/SafeERC20.sol";
 import "../lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
 
 // Inheritance
