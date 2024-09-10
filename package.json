@@ -3,7 +3,9 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox-viem": "^3.0.0",
     "hardhat": "^2.22.10",
-    "openzeppelin-solidity-2.3.0": "npm:openzeppelin-solidity@2.3.0"
+    "openzeppelin-solidity-2.3.0": "npm:openzeppelin-solidity@2.3.0",
+    "@chainlink/contracts-0.0.10": "npm:@chainlink/contracts@0.0.10",
+    "@eth-optimism/contracts": "^0.3.4"
   },
   "version": "1.0.0",
   "description": "gm",
