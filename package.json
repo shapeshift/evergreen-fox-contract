@@ -1,0 +1,19 @@
+{
+  "name": "fox-farm-sc",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox-viem": "^3.0.0",
+    "hardhat": "^2.22.10",
+    "openzeppelin-solidity-2.3.0": "npm:openzeppelin-solidity@2.3.0"
+  },
+  "version": "1.0.0",
+  "description": "gm",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "npx hardhat test"
+  },
+  "author": "",
+  "license": "ISC"
+}
