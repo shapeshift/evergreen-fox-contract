@@ -7,7 +7,7 @@
     "strict": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "types": ["node", "@nomicfoundation/hardhat-viem"]
+    "types": ["node", "@nomicfoundation/hardhat-viem", "@types/chai-as-promised"]
   },
   "include": ["test/**/*"],
   "exclude": ["node_modules"],
