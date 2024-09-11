@@ -6,7 +6,10 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "types": ["node", "@nomicfoundation/hardhat-viem"]
   },
-  "include": ["test/**/*"]
+  "include": ["test/**/*"],
+  "exclude": ["node_modules"],
+  "files": ["hardhat.config.ts"]
 }

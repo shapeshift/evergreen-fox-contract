@@ -14,6 +14,13 @@ import {
     symbol = 'ABC',
     supply = 1e8,
     skipInitialAllocation = false,
+  }: {
+    accounts: { account: { address: string } }[];
+    synth?: string;
+    name?: string;
+    symbol?: string;
+    supply?: number;
+    skipInitialAllocation?: boolean;
   }) {
     const [deployerAccount, owner] = accounts;
   
@@ -36,11 +43,10 @@ import {
     ];
   
     if (synth) {
-      tokenArgs.push(toBytes(synth));
+      tokenArgs.push(synth);
     }
   
     const token = await hre.viem.deployContract(synth ? 'MockSynth' : 'PublicEST', tokenArgs);
-  
     await Promise.all([
       tokenState.write.setAssociatedContract([token.address], { account: owner.account }),
       proxy.write.setTarget([token.address], { account: owner.account }),
