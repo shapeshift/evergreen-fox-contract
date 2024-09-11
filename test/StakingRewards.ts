@@ -6,13 +6,15 @@ import {
   import hre from "hardhat";
   import { getAddress, parseEther, formatEther, toBytes } from "viem";
 
+  const defaultSupply = 1e8;
+
   // Mock token helper function
   async function mockToken({
     accounts,
     synth = undefined,
     name = 'name',
     symbol = 'ABC',
-    supply = 1e8,
+    supply = defaultSupply,
     skipInitialAllocation = false,
   }: {
     accounts: { account: { address: string } }[];
@@ -204,7 +206,7 @@ import {
         await stakingRewards.write.withdraw([stakeAmount], { account: stakingAccount1.account });
   
         expect(await stakingRewards.read.balanceOf([stakingAccount1.account.address])).to.equal(0n);
-        expect(await stakingToken.read.balanceOf([stakingAccount1.account.address])).to.equal(stakeAmount);
+        expect(await stakingToken.read.balanceOf([stakingAccount1.account.address])).to.equal(parseEther(defaultSupply.toString()));
       });
     });
   
@@ -259,7 +261,7 @@ import {
         const initialStakingBalance = await stakingToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
         const initialRewardsBalance = await rewardsToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
   
-        await stakingRewards.write.exit({ account: stakingAccount1.account });
+        await stakingRewards.write.exit([], { account: stakingAccount1.account });
   
         const finalStakingBalance = await stakingToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
         const finalRewardsBalance = await rewardsToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
