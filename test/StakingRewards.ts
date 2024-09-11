@@ -2,98 +2,11 @@ import {
     time,
     loadFixture,
   } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
-  import { expect } from "chai";
-  import hre from "hardhat";
-  import { getAddress, parseEther, formatEther, toBytes } from "viem";
+import { expect } from "chai";
+import { getAddress, parseEther } from "viem";
+import { mockToken, deployStakingRewardsFixture, DEFAULT_SUPPLY } from "./utils";
 
-  const defaultSupply = 1e8;
-
-  // Mock token helper function
-  async function mockToken({
-    accounts,
-    synth = undefined,
-    name = 'name',
-    symbol = 'ABC',
-    supply = defaultSupply,
-    skipInitialAllocation = false,
-  }: {
-    accounts: { account: { address: string } }[];
-    synth?: string;
-    name?: string;
-    symbol?: string;
-    supply?: number;
-    skipInitialAllocation?: boolean;
-  }) {
-    const [deployerAccount, owner] = accounts;
-  
-    const totalSupply = parseEther(supply.toString());
-  
-    const proxy = await hre.viem.deployContract('ProxyERC20', [owner.account.address]);
-    const tokenState = await hre.viem.deployContract('TokenState', [owner.account.address, deployerAccount.account.address]);
-  
-    if (!skipInitialAllocation && supply > 0) {
-      await tokenState.write.setBalanceOf([owner.account.address, totalSupply], { account: deployerAccount.account });
-    }
-  
-    const tokenArgs = [
-      proxy.address,
-      tokenState.address,
-      name,
-      symbol,
-      totalSupply,
-      owner.account.address,
-    ];
-  
-    if (synth) {
-      tokenArgs.push(synth);
-    }
-  
-    const token = await hre.viem.deployContract(synth ? 'MockSynth' : 'PublicEST', tokenArgs);
-    await Promise.all([
-      tokenState.write.setAssociatedContract([token.address], { account: owner.account }),
-      proxy.write.setTarget([token.address], { account: owner.account }),
-    ]);
-  
-    return { token, tokenState, proxy };
-  }
-  
   describe("StakingRewards", function () {
-    async function deployStakingRewardsFixture() {
-      const [owner, rewardsDistribution, stakingAccount1, otherAccount] = await hre.viem.getWalletClients();
-  
-      const { token: rewardsToken } = await mockToken({
-        accounts: [owner, rewardsDistribution],
-        name: 'Rewards Token',
-        symbol: 'RWD',
-      });
-  
-      const { token: stakingToken } = await mockToken({
-        accounts: [owner, stakingAccount1],
-        name: 'Staking Token',
-        symbol: 'STK',
-      });
-  
-      const stakingRewards = await hre.viem.deployContract("contracts/StakingRewards.sol:StakingRewards", [
-        owner.account.address,
-        rewardsDistribution.account.address,
-        rewardsToken.address,
-        stakingToken.address,
-      ]);
-  
-      const publicClient = await hre.viem.getPublicClient();
-  
-      return {
-        stakingRewards,
-        rewardsToken,
-        stakingToken,
-        owner,
-        rewardsDistribution,
-        stakingAccount1,
-        otherAccount,
-        publicClient,
-      };
-    }
-  
     describe("Deployment", function () {
       it("Should set the right owner", async function () {
         const { stakingRewards, owner } = await loadFixture(deployStakingRewardsFixture);
@@ -206,7 +119,7 @@ import {
         await stakingRewards.write.withdraw([stakeAmount], { account: stakingAccount1.account });
   
         expect(await stakingRewards.read.balanceOf([stakingAccount1.account.address])).to.equal(0n);
-        expect(await stakingToken.read.balanceOf([stakingAccount1.account.address])).to.equal(parseEther(defaultSupply.toString()));
+        expect(await stakingToken.read.balanceOf([stakingAccount1.account.address])).to.equal(parseEther(DEFAULT_SUPPLY.toString()));
       });
     });
   
