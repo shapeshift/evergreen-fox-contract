@@ -100,12 +100,12 @@ import {
   
       it("Should set the right rewards token", async function () {
         const { stakingRewards, rewardsToken } = await loadFixture(deployStakingRewardsFixture);
-        expect(getAddress(await stakingRewards.read.rewardsToken())).to.equal(getAddress(rewardsToken.address));
+        expect(getAddress(await stakingRewards.read.rewardsToken() as string)).to.equal(getAddress(rewardsToken.address));
       });
   
       it("Should set the right staking token", async function () {
         const { stakingRewards, stakingToken } = await loadFixture(deployStakingRewardsFixture);
-        expect(getAddress(await stakingRewards.read.stakingToken())).to.equal(getAddress(stakingToken.address));
+        expect(getAddress(await stakingRewards.read.stakingToken() as string)).to.equal(getAddress(stakingToken.address));
       });
     });
   
@@ -186,7 +186,7 @@ import {
         await time.increase(7 * 24 * 60 * 60); // 7 days
   
         const earnedRewards = await stakingRewards.read.earned([stakingAccount1.account.address]);
-        expect(earnedRewards > 0n);
+        expect(earnedRewards as bigint > 0n);
       });
     });
   
@@ -224,7 +224,7 @@ import {
         await time.increase(7 * 24 * 60 * 60); // 7 days
   
         const rewardPerToken = await stakingRewards.read.rewardPerToken();
-        expect(rewardPerToken > 0n);
+        expect(rewardPerToken as bigint > 0n);
       });
     });
   
@@ -256,13 +256,13 @@ import {
   
         await time.increase(7 * 24 * 60 * 60); // 7 days
   
-        const initialStakingBalance = await stakingToken.read.balanceOf([stakingAccount1.account.address]);
-        const initialRewardsBalance = await rewardsToken.read.balanceOf([stakingAccount1.account.address]);
+        const initialStakingBalance = await stakingToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
+        const initialRewardsBalance = await rewardsToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
   
         await stakingRewards.write.exit({ account: stakingAccount1.account });
   
-        const finalStakingBalance = await stakingToken.read.balanceOf([stakingAccount1.account.address]);
-        const finalRewardsBalance = await rewardsToken.read.balanceOf([stakingAccount1.account.address]);
+        const finalStakingBalance = await stakingToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
+        const finalRewardsBalance = await rewardsToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
   
         // Use Viem's comparison for big numbers
         expect(finalStakingBalance > initialStakingBalance).to.be.true;
