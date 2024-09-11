@@ -1,0 +1,16 @@
+{
+  "solidity.compileUsingRemoteVersion": "v0.5.16+commit.9c3226ce",
+  "typescript.tsdk": ".yarn/sdks/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "search.exclude": {
+    "**/.yarn": true,
+    "**/.pnp.*": true
+  },
+  "eslint.nodePath": ".yarn/sdks",
+  "eslint.codeActionsOnSave.rules": [
+    "*"
+  ],
+  "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit"
+  },
+}

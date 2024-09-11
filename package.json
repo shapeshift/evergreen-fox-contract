@@ -4,6 +4,9 @@
     "@chainlink/contracts-0.0.10": "npm:@chainlink/contracts@0.0.10",
     "@eth-optimism/contracts": "^0.3.4",
     "@nomicfoundation/hardhat-toolbox-viem": "^3.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.0.0",
+    "@typescript-eslint/parser": "^5.0.0",
+    "eslint": "^8.0.0",
     "hardhat": "^2.22.10",
     "openzeppelin-solidity-2.3.0": "npm:openzeppelin-solidity@2.3.0"
   },
@@ -14,7 +17,9 @@
     "test": "test"
   },
   "scripts": {
-    "test": "npx hardhat test"
+    "test": "npx hardhat test",
+    "lint": "eslint . --ext .js,.ts",
+    "lint:fix": "eslint . --ext .js,.ts --fix"
   },
   "author": "",
   "license": "ISC"
