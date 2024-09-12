@@ -1,9 +1,12 @@
 import { BigNumber, providers, utils, Contract } from 'ethers';
 import { parseEther } from 'viem';
 import hre from 'hardhat';
-import { takeSnapshot } from '@nomicfoundation/hardhat-toolbox-viem/network-helpers';
 
 export const DEFAULT_SUPPLY = 1e8;
+export const REWARDS_DURATION_SECONDS = 60n * 60n * 24n * 7n; // 7 days
+const PERMIT_TYPEHASH = utils.keccak256(
+  utils.toUtf8Bytes('Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)'),
+);
 
 export async function mockToken({
   accounts,
@@ -89,57 +92,6 @@ export async function deployStakingRewardsFixture() {
   };
 }
 
-  type Fixture<T> = () => Promise<T>;
-
-  interface Snapshot<T> {
-    restorer: { restore: () => Promise<void>; snapshotId: string };
-    fixture: Fixture<T>;
-    data: T;
-    gasUsed: bigint;
-  }
-
-let snapshots: Snapshot<unknown>[] = [];
-
-// This has been adapted from @nomicfoundation/hardhat-network-helpers/src/loadFixture.ts to include the gas used during the fixture deployment.
-export async function loadFixtureWithGas<T>(fixture: Fixture<T>): Promise<T & { gasUsed: bigint }> {
-  if (fixture.name === '') {
-    throw new Error('FixtureAnonymousFunctionError');
-  }
-
-  const snapshot = snapshots.find((s) => s.fixture === fixture);
-
-  if (snapshot !== undefined) {
-    await snapshot.restorer.restore();
-    snapshots = snapshots.filter(
-      (s) =>
-        Number(s.restorer.snapshotId) <= Number(snapshot.restorer.snapshotId),
-    );
-
-    return { ...snapshot.data as T, gasUsed: snapshot.gasUsed };
-  } else {
-    const client = await hre.viem.getPublicClient();
-    const initialGasUsed = await client.getBlockNumber().then(bn => client.getBlock({ blockNumber: bn })).then(b => b.gasUsed);
-    const data = await fixture();
-    const finalGasUsed = await client.getBlockNumber().then(bn => client.getBlock({ blockNumber: bn })).then(b => b.gasUsed);
-    const gasUsed = finalGasUsed - initialGasUsed;
-
-    const restorer = await takeSnapshot();
-
-    snapshots.push({
-      restorer,
-      fixture,
-      data,
-      gasUsed,
-    });
-
-    return { ...data, gasUsed };
-  }
-}
-
-const PERMIT_TYPEHASH = utils.keccak256(
-  utils.toUtf8Bytes('Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)'),
-);
-
 function getDomainSeparator(name: string, tokenAddress: string, chainId: number) {
   return utils.keccak256(
     utils.defaultAbiCoder.encode(
@@ -187,8 +139,6 @@ export async function getApprovalDigest(
     ),
   );
 }
-
-export const REWARDS_DURATION = 60 * 60 * 24 * 135;
 
 export function expandTo18Decimals(n: number): BigNumber {
   return BigNumber.from(n).mul(BigNumber.from(10).pow(18));
