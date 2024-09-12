@@ -9,29 +9,31 @@ const PERMIT_TYPEHASH = utils.keccak256(
 );
 
 export async function mockToken({
+  deployerAccount,
   accounts,
-  synth = undefined,
   name = 'name',
   symbol = 'ABC',
   supply = DEFAULT_SUPPLY,
   skipInitialAllocation = false,
 }: {
+    deployerAccount: { account: { address: string } },
     accounts: { account: { address: string } }[];
-    synth?: string;
     name?: string;
     symbol?: string;
     supply?: number;
     skipInitialAllocation?: boolean;
   }) {
-  const [deployerAccount, owner] = accounts;
+  // const [deployerAccount, owner] = accounts;
 
   const totalSupply = parseEther(supply.toString());
 
-  const proxy = await hre.viem.deployContract('ProxyERC20', [owner.account.address]);
-  const tokenState = await hre.viem.deployContract('TokenState', [owner.account.address, deployerAccount.account.address]);
+  const proxy = await hre.viem.deployContract('ProxyERC20', [deployerAccount.account.address]);
+  const tokenState = await hre.viem.deployContract('TokenState', [deployerAccount.account.address, deployerAccount.account.address]);
 
   if (!skipInitialAllocation && supply > 0) {
-    await tokenState.write.setBalanceOf([owner.account.address, totalSupply], { account: deployerAccount.account });
+    await Promise.all(accounts.map(async (account) => {
+      await tokenState.write.setBalanceOf([account.account.address, totalSupply / BigInt(accounts.length)], { account: deployerAccount.account.address });
+    }));
   }
 
   const tokenArgs = [
@@ -40,33 +42,31 @@ export async function mockToken({
     name,
     symbol,
     totalSupply,
-    owner.account.address,
+    deployerAccount.account.address,
   ];
 
-  if (synth) {
-    tokenArgs.push(synth);
-  }
-
-  const token = await hre.viem.deployContract(synth ? 'MockSynth' : 'PublicEST', tokenArgs);
+  const token = await hre.viem.deployContract('PublicEST', tokenArgs);
   await Promise.all([
-    tokenState.write.setAssociatedContract([token.address], { account: owner.account }),
-    proxy.write.setTarget([token.address], { account: owner.account }),
+    tokenState.write.setAssociatedContract([token.address], { account: deployerAccount.account.address }),
+    proxy.write.setTarget([token.address], { account: deployerAccount.account.address }),
   ]);
 
   return { token, tokenState, proxy };
 }
 
 export async function deployStakingRewardsFixture() {
-  const [owner, rewardsDistribution, stakingAccount1, otherAccount] = await hre.viem.getWalletClients();
+  const [owner, rewardsDistribution, stakingAccount1, stakingAccount2] = await hre.viem.getWalletClients();
 
   const { token: rewardsToken } = await mockToken({
-    accounts: [owner, rewardsDistribution],
+    deployerAccount: owner,
+    accounts: [rewardsDistribution],
     name: 'Rewards Token',
     symbol: 'RWD',
   });
 
   const { token: stakingToken } = await mockToken({
-    accounts: [owner, stakingAccount1],
+    deployerAccount: owner,
+    accounts: [stakingAccount1, stakingAccount2],
     name: 'Staking Token',
     symbol: 'STK',
   });
@@ -87,7 +87,7 @@ export async function deployStakingRewardsFixture() {
     owner,
     rewardsDistribution,
     stakingAccount1,
-    otherAccount,
+    stakingAccount2,
     publicClient,
   };
 }
