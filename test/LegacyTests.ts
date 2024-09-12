@@ -2,7 +2,7 @@ import { loadFixture, time } from '@nomicfoundation/hardhat-toolbox-viem/network
 import { deployStakingRewardsFixture, REWARDS_DURATION_SECONDS } from './utils';
 import { expect } from 'chai';
 import { parseEther } from 'viem';
-import hre from 'hardhat';
+
 describe('StakingRewards', () => {
   it('gets rewardsDuration', async () => {
     const { stakingRewards } = await loadFixture(deployStakingRewardsFixture);
