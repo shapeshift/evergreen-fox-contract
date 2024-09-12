@@ -59,7 +59,7 @@ export async function deployStakingRewardsFixture() {
 
   const { token: rewardsToken } = await mockToken({
     deployerAccount: owner,
-    accounts: [rewardsDistribution],
+    accounts: [rewardsDistribution, owner],
     name: 'Rewards Token',
     symbol: 'RWD',
   });

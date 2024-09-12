@@ -26,19 +26,16 @@ describe('StakingRewards', function () {
 
   describe('Function permissions', () => {
     it('only owner can call notifyRewardAmount', async () => {
-      const { stakingRewards, stakingAccount2 } = await loadFixture(deployStakingRewardsFixture);
-      const rewardValue = parseEther('1');
+      const { rewardsDistribution, stakingRewards, rewardsToken, stakingAccount2 } = await loadFixture(deployStakingRewardsFixture);
+      const rewardAmount = parseEther('1');
 
-      await expect(stakingRewards.write.notifyRewardAmount([rewardValue], { account: stakingAccount2.account }))
+      await rewardsToken.write.transfer([stakingRewards.address, rewardAmount], { account: rewardsDistribution.account });
+
+      await expect(stakingRewards.write.notifyRewardAmount([rewardAmount], { account: stakingAccount2.account }))
         .to.be.rejectedWith('Caller is not RewardsDistribution contract');
-    });
 
-    it('only rewardsDistribution address can call notifyRewardAmount', async () => {
-      const { stakingRewards, stakingAccount2 } = await loadFixture(deployStakingRewardsFixture);
-      const rewardValue = parseEther('1');
-
-      await expect(stakingRewards.write.notifyRewardAmount([rewardValue], { account: stakingAccount2.account }))
-        .to.be.rejectedWith('Caller is not RewardsDistribution contract');
+      await expect(stakingRewards.write.notifyRewardAmount([rewardAmount], { account: rewardsDistribution.account }))
+        .to.not.be.rejected;
     });
   });
 
@@ -67,9 +64,9 @@ describe('StakingRewards', function () {
       const { stakingRewards, stakingToken, stakingAccount1 } = await loadFixture(deployStakingRewardsFixture);
       const stakeAmount = parseEther('100');
 
+      // Stake tokens
       await stakingToken.write.transfer([stakingAccount1.account.address, stakeAmount], { account: stakingAccount1.account });
       await stakingToken.write.approve([stakingRewards.address, stakeAmount], { account: stakingAccount1.account });
-
       await stakingRewards.write.stake([stakeAmount], { account: stakingAccount1.account });
 
       expect(await stakingRewards.read.balanceOf([stakingAccount1.account.address])).to.equal(stakeAmount);
@@ -135,15 +132,15 @@ describe('StakingRewards', function () {
       const stakeAmount2 = parseEther('19');
       const rewardAmount = parseEther('1000');
 
+      // Distribute rewards for the upcoming staking period
+      await rewardsToken.write.transfer([stakingRewards.address, rewardAmount], { account: rewardsDistribution.account });
+      await stakingRewards.write.notifyRewardAmount([rewardAmount], { account: rewardsDistribution.account });
+
       // Stake tokens
       await stakingToken.write.approve([stakingRewards.address, stakeAmount1], { account: stakingAccount1.account });
       await stakingToken.write.approve([stakingRewards.address, stakeAmount2], { account: stakingAccount2.account });
       await stakingRewards.write.stake([stakeAmount1], { account: stakingAccount1.account });
       await stakingRewards.write.stake([stakeAmount2], { account: stakingAccount2.account });
-
-      // Distribute rewards
-      await rewardsToken.write.transfer([stakingRewards.address, rewardAmount], { account: rewardsDistribution.account });
-      await stakingRewards.write.notifyRewardAmount([rewardAmount], { account: rewardsDistribution.account });
 
       const rewardsDuration = await stakingRewards.read.rewardsDuration() as bigint;
       const timeStaked1 = 3n * 24n * 60n * 60n; // 3 days
@@ -186,12 +183,14 @@ describe('StakingRewards', function () {
       const stakeAmount = parseEther('100');
       const rewardAmount = parseEther('1000');
 
+      // Setup rewards program
+      await rewardsToken.write.transfer([stakingRewards.address, rewardAmount], { account: rewardsDistribution.account });
+      await stakingRewards.write.notifyRewardAmount([rewardAmount], { account: rewardsDistribution.account });
+
+      // Setup staking
       await stakingToken.write.transfer([stakingAccount1.account.address, stakeAmount], { account: stakingAccount1.account });
       await stakingToken.write.approve([stakingRewards.address, stakeAmount], { account: stakingAccount1.account });
       await stakingRewards.write.stake([stakeAmount], { account: stakingAccount1.account });
-
-      await rewardsToken.write.transfer([stakingRewards.address, rewardAmount], { account: rewardsDistribution.account });
-      await stakingRewards.write.notifyRewardAmount([rewardAmount], { account: rewardsDistribution.account });
 
       await time.increase(7 * 24 * 60 * 60); // 7 days
 
@@ -218,28 +217,186 @@ describe('StakingRewards', function () {
       const stakeAmount = parseEther('100');
       const rewardAmount = parseEther('1000');
 
-      // Setup staking and rewards
-      await stakingToken.write.transfer([stakingAccount1.account.address, stakeAmount], { account: stakingAccount1.account });
+      const intialStakingTokenBalance = await stakingToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
+      const initialRewardsTokenBalance = await rewardsToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
+
+      // Setup rewards program
+      await rewardsToken.write.transfer([stakingRewards.address, rewardAmount], { account: rewardsDistribution.account });
+      await stakingRewards.write.notifyRewardAmount([rewardAmount], { account: rewardsDistribution.account });
+
+      // Setup staking
       await stakingToken.write.approve([stakingRewards.address, stakeAmount], { account: stakingAccount1.account });
       await stakingRewards.write.stake([stakeAmount], { account: stakingAccount1.account });
 
+      await time.increase(7 * 24 * 60 * 60); // 7 days
+
+      const earnedRewards = await stakingRewards.read.earned([stakingAccount1.account.address]) as bigint;
+      await stakingRewards.write.exit([], { account: stakingAccount1.account });
+
+      const epoch1StakingTokenBalance = await stakingToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
+      const epoch1RewardsTokenBalance = await rewardsToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
+
+      expect(epoch1StakingTokenBalance).to.equal(intialStakingTokenBalance);
+      expect(epoch1RewardsTokenBalance).to.equal(initialRewardsTokenBalance + earnedRewards);
+      expect(await stakingRewards.read.balanceOf([stakingAccount1.account.address])).to.equal(0n);
+    });
+
+    it('stakers cease receiving rewards after they exit', async () => {
+      const { stakingRewards, stakingToken, rewardsToken, stakingAccount1, rewardsDistribution } = await loadFixture(deployStakingRewardsFixture);
+      const stakeAmount = parseEther('100');
+      const rewardAmount = parseEther('1000');
+
+      const intialStakingTokenBalance = await stakingToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
+      const initialRewardsTokenBalance = await rewardsToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
+
+      // Setup rewards program
+      await rewardsToken.write.transfer([stakingRewards.address, rewardAmount], { account: rewardsDistribution.account });
+      await stakingRewards.write.notifyRewardAmount([rewardAmount], { account: rewardsDistribution.account });
+
+      // Setup staking
+      await stakingToken.write.approve([stakingRewards.address, stakeAmount], { account: stakingAccount1.account });
+      await stakingRewards.write.stake([stakeAmount], { account: stakingAccount1.account });
+
+      await time.increase(7 * 24 * 60 * 60); // 7 days
+
+      const epoch1EarnedRewards = await stakingRewards.read.earned([stakingAccount1.account.address]) as bigint;
+      await stakingRewards.write.exit([], { account: stakingAccount1.account });
+
+      const epoch1StakingTokenBalance = await stakingToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
+      const epoch1RewardsTokenBalance = await rewardsToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
+
+      expect(epoch1StakingTokenBalance).to.equal(intialStakingTokenBalance);
+      expect(epoch1RewardsTokenBalance).to.equal(initialRewardsTokenBalance + epoch1EarnedRewards);
+      expect(await stakingRewards.read.balanceOf([stakingAccount1.account.address])).to.equal(0n);
+
+      // do another staking period without stakingAccount1 in the pool
       await rewardsToken.write.transfer([stakingRewards.address, rewardAmount], { account: rewardsDistribution.account });
       await stakingRewards.write.notifyRewardAmount([rewardAmount], { account: rewardsDistribution.account });
 
       await time.increase(7 * 24 * 60 * 60); // 7 days
 
-      const initialStakingBalance = await stakingToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
-      const initialRewardsBalance = await rewardsToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
+      const epoch2EarnedRewards = await stakingRewards.read.earned([stakingAccount1.account.address]) as bigint;
+      const epoch2StakingTokenBalance = await stakingToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
+      const epoch2RewardsTokenBalance = await rewardsToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
+
+      // assert the user did not get rewards
+      expect(epoch2EarnedRewards).to.equal(0n);
+      expect(epoch2StakingTokenBalance).to.equal(epoch1StakingTokenBalance);
+      expect(epoch2RewardsTokenBalance).to.equal(epoch1RewardsTokenBalance);
+    });
+
+    it('prevents users withdrawing their reward multiple times', async () => {
+      const { stakingRewards, stakingToken, rewardsToken, stakingAccount1, rewardsDistribution } = await loadFixture(deployStakingRewardsFixture);
+      const stakeAmount = parseEther('100');
+      const rewardAmount = parseEther('1000');
+
+      // Setup rewards program
+      await rewardsToken.write.transfer([stakingRewards.address, rewardAmount], { account: rewardsDistribution.account });
+      await stakingRewards.write.notifyRewardAmount([rewardAmount], { account: rewardsDistribution.account });
+
+      // Setup staking
+      await stakingToken.write.approve([stakingRewards.address, stakeAmount], { account: stakingAccount1.account });
+      await stakingRewards.write.stake([stakeAmount], { account: stakingAccount1.account });
+
+      await time.increase(7 * 24 * 60 * 60); // 7 days
 
       await stakingRewards.write.exit([], { account: stakingAccount1.account });
 
-      const finalStakingBalance = await stakingToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
-      const finalRewardsBalance = await rewardsToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
+      await expect(stakingRewards.write.exit([], { account: stakingAccount1.account }))
+        .to.be.rejectedWith('Cannot withdraw 0');
+    });
 
-      // Use Viem's comparison for big numbers
-      expect(finalStakingBalance > initialStakingBalance).to.be.true;
-      expect(finalRewardsBalance > initialRewardsBalance).to.be.true;
+    it('accumulates rewards if a user doesn\'t withdraw across multiple staking periods', async () => {
+      const { stakingRewards, stakingToken, rewardsToken, stakingAccount1, rewardsDistribution } = await loadFixture(deployStakingRewardsFixture);
+      const stakeAmount = parseEther('100');
+      const rewardAmount = parseEther('1000');
+
+      // Setup rewards program
+      await rewardsToken.write.transfer([stakingRewards.address, rewardAmount], { account: rewardsDistribution.account });
+      await stakingRewards.write.notifyRewardAmount([rewardAmount], { account: rewardsDistribution.account });
+
+      // Setup staking
+      await stakingToken.write.approve([stakingRewards.address, stakeAmount], { account: stakingAccount1.account });
+      await stakingRewards.write.stake([stakeAmount], { account: stakingAccount1.account });
+
+      await time.increase(7 * 24 * 60 * 60); // 7 days
+
+      const epoch1EarnedRewards = await stakingRewards.read.earned([stakingAccount1.account.address]) as bigint;
+
+      // do another staking period without stakingAccount1 in the pool
+      await rewardsToken.write.transfer([stakingRewards.address, rewardAmount], { account: rewardsDistribution.account });
+      await stakingRewards.write.notifyRewardAmount([rewardAmount], { account: rewardsDistribution.account });
+
+      await time.increase(7 * 24 * 60 * 60); // 7 days
+
+      const epoch2EarnedRewards = await stakingRewards.read.earned([stakingAccount1.account.address]) as bigint;
+
+      expect(Number(epoch2EarnedRewards)).to.be.closeTo(Number(2n * epoch1EarnedRewards), Number(epoch1EarnedRewards / 10000n)); // Within 0.01%
+    });
+
+    it('stakers can enter the program early, and will receive rewards for the actual time of the program after it started but not prior', async () => {
+      const { stakingRewards, stakingToken, rewardsToken, stakingAccount1, rewardsDistribution } = await loadFixture(deployStakingRewardsFixture);
+      const stakeAmount = parseEther('100');
+      const rewardAmount = parseEther('1000');
+
+      const intialStakingTokenBalance = await stakingToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
+      const initialRewardsTokenBalance = await rewardsToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
+
+      // Setup staking
+      await stakingToken.write.approve([stakingRewards.address, stakeAmount], { account: stakingAccount1.account });
+      await stakingRewards.write.stake([stakeAmount], { account: stakingAccount1.account });
+
+      const earnedRewardsPriorToProgramStart = await stakingRewards.read.earned([stakingAccount1.account.address]) as bigint;
+
+      // No rewards should be received prior to the program start
+      expect(earnedRewardsPriorToProgramStart).to.equal(0n);
+
+      // Time passes before the program started
+      await time.increase(3 * 24 * 60 * 60); // 3 days
+
+      // Setup rewards program
+      await rewardsToken.write.transfer([stakingRewards.address, rewardAmount], { account: rewardsDistribution.account });
+      await stakingRewards.write.notifyRewardAmount([rewardAmount], { account: rewardsDistribution.account });
+
+      await time.increase(7 * 24 * 60 * 60); // 7 days
+
+      const earnedRewards = await stakingRewards.read.earned([stakingAccount1.account.address]) as bigint;
+      expect(Number(earnedRewards)).to.be.closeTo(Number(rewardAmount), Number(rewardAmount / 10000n)); // Within 0.01%
+      await stakingRewards.write.exit([], { account: stakingAccount1.account });
+
+      const epoch1StakingTokenBalance = await stakingToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
+      const epoch1RewardsTokenBalance = await rewardsToken.read.balanceOf([stakingAccount1.account.address]) as bigint;
+
+      expect(epoch1StakingTokenBalance).to.equal(intialStakingTokenBalance);
+      expect(epoch1RewardsTokenBalance).to.equal(initialRewardsTokenBalance + earnedRewards);
       expect(await stakingRewards.read.balanceOf([stakingAccount1.account.address])).to.equal(0n);
+    });
+
+    it('no rewards are received after the reward period has ended', async () => {
+      const { stakingRewards, stakingToken, rewardsToken, stakingAccount1, rewardsDistribution } = await loadFixture(deployStakingRewardsFixture);
+      const stakeAmount = parseEther('100');
+      const rewardAmount = parseEther('1000');
+
+      // Setup rewards program
+      await rewardsToken.write.transfer([stakingRewards.address, rewardAmount], { account: rewardsDistribution.account });
+      await stakingRewards.write.notifyRewardAmount([rewardAmount], { account: rewardsDistribution.account });
+
+      // Setup staking
+      await stakingToken.write.approve([stakingRewards.address, stakeAmount], { account: stakingAccount1.account });
+      await stakingRewards.write.stake([stakeAmount], { account: stakingAccount1.account });
+
+      await time.increase(7 * 24 * 60 * 60); // 7 days
+
+      const epoch1EarnedRewards = await stakingRewards.read.earned([stakingAccount1.account.address]) as bigint;
+
+      // Fast forward multiple epochs into the future to simulate would-be rewards multiple rewards if the program auto-restarted
+      await time.increase(7 * 24 * 60 * 60); // 7 days
+      await time.increase(7 * 24 * 60 * 60); // 7 days
+      await time.increase(7 * 24 * 60 * 60); // 7 days
+
+      const epoch1EarnedRewardsPostPeriod = await stakingRewards.read.earned([stakingAccount1.account.address]) as bigint;
+
+      expect(epoch1EarnedRewardsPostPeriod).to.equal(epoch1EarnedRewards);
     });
   });
 });
