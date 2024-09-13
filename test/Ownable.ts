@@ -29,7 +29,7 @@ describe('StakingRewards Owned', function () {
       const { stakingRewards, owner, stakingAccount1 } = await loadFixture(deployStakingRewardsFixture);
 
       await stakingRewards.write.nominateNewOwner([stakingAccount1.account.address], { account: owner.account });
-      await stakingRewards.write.acceptOwnership({ account: stakingAccount1.account });
+      await stakingRewards.write.acceptOwnership([], { account: stakingAccount1.account });
 
       expect(await stakingRewards.read.owner()).to.equal(getAddress(stakingAccount1.account.address));
       expect(await stakingRewards.read.nominatedOwner()).to.equal(getAddress('0x0000000000000000000000000000000000000000'));
@@ -40,7 +40,7 @@ describe('StakingRewards Owned', function () {
 
       await stakingRewards.write.nominateNewOwner([stakingAccount1.account.address], { account: owner.account });
 
-      await expect(stakingRewards.write.acceptOwnership({ account: stakingAccount2.account }))
+      await expect(stakingRewards.write.acceptOwnership([], { account: stakingAccount2.account }))
         .to.be.rejectedWith('You must be nominated before you can accept ownership');
     });
   });
@@ -57,7 +57,7 @@ describe('StakingRewards Owned', function () {
 
     it('Should not allow non-owner to set rewards duration', async function () {
       const { stakingRewards, stakingAccount1 } = await loadFixture(deployStakingRewardsFixture);
-      const newDuration = 14n * 24n * 60n * 60n; // 14 days
+      const newDuration = BigInt(14 * 24 * 60 * 60); // 14 days
 
       await expect(stakingRewards.write.setRewardsDuration([newDuration], { account: stakingAccount1.account }))
         .to.be.rejectedWith('Only the contract owner may perform this action');
@@ -105,7 +105,7 @@ describe('StakingRewards Owned', function () {
         .to.be.rejectedWith('Only the contract owner may perform this action');
 
       // Accept ownership
-      await stakingRewards.write.acceptOwnership({ account: stakingAccount1.account });
+      await stakingRewards.write.acceptOwnership([], { account: stakingAccount1.account });
 
       // Attempt to set rewards duration after accepting ownership (should succeed)
       await stakingRewards.write.setRewardsDuration([newDuration], { account: stakingAccount1.account });
