@@ -1,12 +1,8 @@
-import { BigNumber, providers, utils, Contract } from 'ethers';
 import { parseEther } from 'viem';
 import hre from 'hardhat';
 
 export const DEFAULT_SUPPLY = 1e8;
 export const REWARDS_DURATION_SECONDS = 60n * 60n * 24n * 7n; // 7 days
-const PERMIT_TYPEHASH = utils.keccak256(
-  utils.toUtf8Bytes('Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)'),
-);
 
 export async function mockToken({
   deployerAccount,
@@ -23,8 +19,6 @@ export async function mockToken({
     supply?: number;
     skipInitialAllocation?: boolean;
   }) {
-  // const [deployerAccount, owner] = accounts;
-
   const totalSupply = parseEther(supply.toString());
 
   const proxy = await hre.viem.deployContract('ProxyERC20', [deployerAccount.account.address]);
@@ -90,60 +84,4 @@ export async function deployStakingRewardsFixture() {
     stakingAccount2,
     publicClient,
   };
-}
-
-function getDomainSeparator(name: string, tokenAddress: string, chainId: number) {
-  return utils.keccak256(
-    utils.defaultAbiCoder.encode(
-      ['bytes32', 'bytes32', 'bytes32', 'uint256', 'address'],
-      [
-        utils.keccak256(
-          utils.toUtf8Bytes('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'),
-        ),
-        utils.keccak256(utils.toUtf8Bytes(name)),
-        utils.keccak256(utils.toUtf8Bytes('1')),
-        chainId,
-        tokenAddress,
-      ],
-    ),
-  );
-}
-
-export async function getApprovalDigest(
-  token: Contract,
-  approve: {
-    owner: string
-    spender: string
-    value: BigNumber
-  },
-  nonce: BigNumber,
-  deadline: BigNumber,
-  chainId: number,
-): Promise<string> {
-  const name = await token.name();
-  const DOMAIN_SEPARATOR = getDomainSeparator(name, token.address, chainId);
-  return utils.keccak256(
-    utils.solidityPack(
-      ['bytes1', 'bytes1', 'bytes32', 'bytes32'],
-      [
-        '0x19',
-        '0x01',
-        DOMAIN_SEPARATOR,
-        utils.keccak256(
-          utils.defaultAbiCoder.encode(
-            ['bytes32', 'address', 'address', 'uint256', 'uint256', 'uint256'],
-            [PERMIT_TYPEHASH, approve.owner, approve.spender, approve.value, nonce, deadline],
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-export function expandTo18Decimals(n: number): BigNumber {
-  return BigNumber.from(n).mul(BigNumber.from(10).pow(18));
-}
-
-export async function mineBlock(provider: providers.JsonRpcProvider, timestamp: number): Promise<void> {
-  return provider.send('evm_mine', [timestamp]);
 }
