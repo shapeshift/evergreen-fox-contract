@@ -1,20 +1,22 @@
 import { buildModule } from '@nomicfoundation/hardhat-ignition/modules';
 
-const OWNER = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'; // FIXME: this is a dummy Hardhat address
-const REWARDS_DISTRIBUTION = '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'; // FIXME: this is a dummy Hardhat address
+const REWARDS_DISTRIBUTION = '0x5337027a4873210E1A4a0F2558F05C9792E2C9E6'; // FIXME: this is a dummy address - it needs to be set
 
 const REWARDS_TOKEN = '0xc770eefad204b5180df6a14ee197d99d808ee52d'; // FOX
 const STAKING_TOKEN = '0x470e8de2ebaef52014a47cb5e6af86884947f08c'; // ETH/FOX Pool
+
 export const REWARDS_DURATION = 14n * 24n * 60n * 60n; // 14 days in seconds
 
 const StakingRewardsModule = buildModule('StakingRewardsModule', (m) => {
-  const owner = m.getParameter('owner', OWNER);
+  const owner = m.getAccount(0);
   const rewardsDistribution = m.getParameter('rewardsDistribution', REWARDS_DISTRIBUTION);
   const rewardsToken = m.getParameter('rewardsToken', REWARDS_TOKEN);
   const stakingToken = m.getParameter('stakingToken', STAKING_TOKEN);
   const rewardsDuration = m.getParameter('newRewardsDuration', REWARDS_DURATION);
 
-  const stakingRewards = m.contract('StakingRewards', [owner, rewardsDistribution, rewardsToken, stakingToken]);
+  const stakingRewards = m.contract('StakingRewards', [owner, rewardsDistribution, rewardsToken, stakingToken], {
+    from: owner,
+  });
 
   m.call(stakingRewards, 'setRewardsDuration', [rewardsDuration]);
 
