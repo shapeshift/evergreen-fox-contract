@@ -26,14 +26,20 @@ describe('StakingRewards', function () {
 
   describe('Function permissions', () => {
     it('only rewardsDistribution can call notifyRewardAmount', async () => {
-      const { rewardsDistribution, stakingRewards, rewardsToken, stakingAccount2 } = await loadFixture(deployStakingRewardsFixture);
+      const { rewardsDistribution, stakingRewards, rewardsToken, stakingAccount2, owner } = await loadFixture(deployStakingRewardsFixture);
       const rewardAmount = parseEther('1');
 
       await rewardsToken.write.transfer([stakingRewards.address, rewardAmount], { account: rewardsDistribution.account });
 
+      // Check arbitrary account cannot call notifyRewardAmount
       await expect(stakingRewards.write.notifyRewardAmount([rewardAmount], { account: stakingAccount2.account }))
         .to.be.rejectedWith('Caller is not RewardsDistribution contract');
 
+      // Check owner cannot call notifyRewardAmount
+      await expect(stakingRewards.write.notifyRewardAmount([rewardAmount], { account: owner.account }))
+        .to.be.rejectedWith('Caller is not RewardsDistribution contract');
+
+      // Check rewardsDistribution can call notifyRewardAmount
       await expect(stakingRewards.write.notifyRewardAmount([rewardAmount], { account: rewardsDistribution.account }))
         .to.not.be.rejected;
     });
