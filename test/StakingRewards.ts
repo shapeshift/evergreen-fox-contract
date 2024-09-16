@@ -25,7 +25,7 @@ describe('StakingRewards', function () {
   });
 
   describe('Function permissions', () => {
-    it('only owner can call notifyRewardAmount', async () => {
+    it('only rewardsDistribution can call notifyRewardAmount', async () => {
       const { rewardsDistribution, stakingRewards, rewardsToken, stakingAccount2 } = await loadFixture(deployStakingRewardsFixture);
       const rewardAmount = parseEther('1');
 
