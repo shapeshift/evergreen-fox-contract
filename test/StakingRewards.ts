@@ -43,6 +43,16 @@ describe('StakingRewards', function () {
       await expect(stakingRewards.write.notifyRewardAmount([rewardAmount], { account: rewardsDistribution.account }))
         .to.not.be.rejected;
     });
+
+    it('only owner can call setRewardDistribution', async () => {
+      const { stakingRewards, stakingAccount2, owner } = await loadFixture(deployStakingRewardsFixture);
+
+      await expect(stakingRewards.write.setRewardsDistribution([getAddress('0x0000000000000000000000000000000000000000')], { account: stakingAccount2.account }))
+        .to.be.rejectedWith('Only the contract owner may perform this action');
+
+      await expect(stakingRewards.write.setRewardsDistribution([getAddress('0x0000000000000000000000000000000000000000')], { account: owner.account }))
+        .to.not.be.rejected;
+    });
   });
 
   describe('Pausable', () => {
@@ -161,6 +171,17 @@ describe('StakingRewards', function () {
 
       const earnedRewards2 = await stakingRewards.read.earned([stakingAccount2.account.address]);
       expect(earnedRewards2 as bigint === ((timeStaked2 / rewardsDuration) * rewardAmount) / stakeAmount2);
+    });
+
+    it('Should allow owner changing the rewards distribution address', async () => {
+      const { stakingRewards, rewardsDistribution, owner } = await loadFixture(deployStakingRewardsFixture);
+      const newRewardsDistribution = getAddress('0x0000000000000000000000000000000000000001');
+
+      const initialAddress = getAddress(rewardsDistribution.account.address);
+      expect(await stakingRewards.read.rewardsDistribution()).to.equal(initialAddress);
+
+      await stakingRewards.write.setRewardsDistribution([newRewardsDistribution], { account: owner.account });
+      expect(await stakingRewards.read.rewardsDistribution()).to.equal(newRewardsDistribution);
     });
   });
 
