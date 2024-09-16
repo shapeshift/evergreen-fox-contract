@@ -65,7 +65,7 @@ export async function deployStakingRewardsFixture() {
     symbol: 'STK',
   });
 
-  const stakingRewards = await hre.viem.deployContract('contracts/StakingRewards.sol:StakingRewards', [
+  const stakingRewards = await hre.viem.deployContract('StakingRewards', [
     owner.account.address,
     rewardsDistribution.account.address,
     rewardsToken.address,
