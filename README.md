@@ -14,7 +14,19 @@ Test: `npx hardhat test`
 
 ## Deploy with Ignition
 
-`npx hardhat ignition deploy ignition/modules/StakingRewards.ts`
+### Mainnet
+
+First configure the .env file with valid RPC_URL and PRIVATE_KEY values.
+
+Visualize the deployment plan: `npx hardhat ignition visualize ignition/modules/StakingRewards.ts --network mainnet`
+
+Deploy the contract: `npx hardhat ignition deploy ignition/modules/StakingRewards.ts --network mainnet`
+
+### Local
+
+Start the local hardhat node: `npx hardhat node`
+
+Deploy the contract: `npx hardhat ignition deploy ignition/modules/StakingRewards.ts --network localhost`
 
 ### Deployment notes
 
