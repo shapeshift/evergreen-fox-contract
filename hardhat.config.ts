@@ -13,10 +13,10 @@ const config: HardhatUserConfig = {
     },
     // Mainnet configuration (only used if INFURA_API_KEY and PRIVATE_KEY are set)
     // Let's us still test locally without setting up mainnet
-    ...(process.env.INFURA_API_KEY && process.env.PRIVATE_KEY
+    ...(process.env.RPC_URL && process.env.PRIVATE_KEY
       ? {
         mainnet: {
-          url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
+          url: process.env.RPC_URL,
           accounts: [process.env.PRIVATE_KEY],
         },
       }
