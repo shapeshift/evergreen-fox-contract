@@ -9,7 +9,7 @@
     "resolveJsonModule": true,
     "types": ["node", "@nomicfoundation/hardhat-viem", "@types/chai-as-promised"]
   },
-  "include": ["test/**/*"],
+  "include": ["test/**/*", "ignition/**/*"],
   "exclude": ["node_modules"],
   "files": ["hardhat.config.ts"]
 }
