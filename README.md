@@ -11,3 +11,7 @@
 Compile: `npx hardhat compile`
 
 Test: `npx hardhat test`
+
+## Deploy with Ignition
+
+`npx hardhat ignition deploy ignition/modules/StakingRewards.ts`
