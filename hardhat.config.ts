@@ -29,6 +29,18 @@ const config: HardhatUserConfig = {
       },
     ],
   },
+  // Etherscan configuration for mainnet deployment verification
+  // Optional so we can still test locally without setting up etherscan
+  ...(process.env.ETHERSCAN_API_KEY
+    ? {
+      etherscan: {
+        apiKey: process.env.ETHERSCAN_API_KEY,
+      },
+    }
+    : {}),
+  sourcify: {
+    enabled: true,
+  },
 };
 
 export default config;

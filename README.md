@@ -16,11 +16,11 @@ Test: `npx hardhat test`
 
 ### Mainnet
 
-First configure the .env file with valid RPC_URL and PRIVATE_KEY values.
+First configure the .env file with valid `RPC_URL`, `PRIVATE_KEY` and `ETHERSCAN_API_KEY` values.
 
 Visualize the deployment plan: `npx hardhat ignition visualize ignition/modules/StakingRewards.ts --network mainnet`
 
-Deploy the contract: `npx hardhat ignition deploy ignition/modules/StakingRewards.ts --network mainnet`
+Deploy and verify the contract: `npx hardhat ignition deploy ignition/modules/StakingRewards.ts --network mainnet --verify`
 
 ### Local
 
