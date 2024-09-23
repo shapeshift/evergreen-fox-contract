@@ -53,6 +53,23 @@ describe('StakingRewards', function () {
       await expect(stakingRewards.write.setRewardsDistribution([getAddress('0x0000000000000000000000000000000000000000')], { account: owner.account }))
         .to.not.be.rejected;
     });
+
+    it('owner can also be the rewardsDistribution address', async () => {
+      const { stakingRewards, owner, rewardsToken } = await loadFixture(deployStakingRewardsFixture);
+      const ownerAddress = getAddress(owner.account.address);
+
+      await expect(stakingRewards.write.setRewardsDistribution([getAddress(ownerAddress)], { account: owner.account }))
+        .to.not.be.rejected;
+
+      expect(await stakingRewards.read.rewardsDistribution()).to.equal(ownerAddress);
+
+      // Check owner can call notifyRewardAmount
+      const rewardAmount = parseEther('1');
+      await rewardsToken.write.transfer([stakingRewards.address, rewardAmount], { account: owner.account });
+
+      await expect(stakingRewards.write.notifyRewardAmount([rewardAmount], { account: owner.account }))
+        .to.not.be.rejected;
+    });
   });
 
   describe('Pausable', () => {
