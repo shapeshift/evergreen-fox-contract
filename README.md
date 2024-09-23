@@ -1,28 +1,28 @@
-# FOX staking contract (synthetix fork)
+# Evergreen FOX staking contract (synthetix fork)
 
 ## Mainnet deployment
 
-- [StakingRewards]https://etherscan.io/address/0xe7e16e2b05440c2e484c5c41ac3e5a4d15da2744)
+- [StakingRewards](https://etherscan.io/address/0xe7e16e2b05440c2e484c5c41ac3e5a4d15da2744)
 
 ### Notes for operation of rewards periods (Attention: multisig signers)
 
 #### Initial set-up
 
-*** executing these transactions in sequence is critical ***
+> [!CAUTION]
+> Executing these transactions in sequence is critical.
 
 1. Call `setRewardsDistribution` setting the DAO multisig address as the rewards distribution address.
-2. Call `setRewardsDuration` with the correct duration for the rewards period in seconds. 
-3. Transfer FOX to the StakingRewards contract. (NOTE: this step can be done tested with a smaller amount of FOX if desired)
-4. Call 'notifyRewardAmount' with the amount of FOX to be distributed over the rewards period duration. This will start the rewards period immediately. 
+2. Call `setRewardsDuration` with the correct duration for the rewards period in seconds.
+3. Transfer FOX to the StakingRewards contract. (NOTE: this step can be done and tested with a smaller amount of FOX if desired)
+4. Call `notifyRewardAmount` with the amount of FOX to be distributed over the rewards period duration. This will start the rewards period immediately.
 
 #### Ongoing operation
 
-**Starting a new rewards period** - Prior to adding more fox for a new period, be sure that the the previous period has expired AND the correct duration is set.
+**Starting a new rewards period** - Prior to adding more FOX for a new period, be sure that the the previous period has expired AND the correct duration is set.
 
 **Modifying Rewards Amount** - The amount of rewards can be increased at any time during an active period by sending FOX to the contract and then calling `notifyRewardAmount`. However, be aware that this resets the program period countdown all over again.
 
-**Changing program duration** - The duration of a rewards period can not be changed during an active rewards period.  To modify the duration, the current period must expire and then the duration can be set before starting the next period.
-
+**Changing program duration** - The duration of a rewards period can not be changed during an active rewards period. To modify the duration, the current period must expire and then the duration can be set before starting the next period.
 
 ## Getting started
 
