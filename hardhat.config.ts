@@ -23,6 +23,12 @@ const config: HardhatUserConfig = {
       : {}),
   },
   solidity: {
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 100000,
+      },
+    },
     compilers: [
       {
         version: '0.5.16',
