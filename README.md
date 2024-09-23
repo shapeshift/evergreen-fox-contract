@@ -11,6 +11,7 @@
 > [!CAUTION]
 > Executing these transactions in sequence is critical.
 
+1. Call `acceptOwnership` from the DAO multisig.
 1. Call `setRewardsDistribution` setting the DAO multisig address as the rewards distribution address.
 2. Call `setRewardsDuration` with the correct duration for the rewards period in seconds.
 3. Transfer FOX to the StakingRewards contract. (NOTE: this step can be done and tested with a smaller amount of FOX if desired)
